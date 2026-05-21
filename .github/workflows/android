@@ -1,0 +1,42 @@
+name: Build Android APK
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Initialize App Packaging Engine
+        run: |
+          npm init -y
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init "Accident Tracker" "com.rushm.accidenttracker" --web-dir=. --nopm
+          npx cap add android
+
+      - name: Setup Java Environment
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Android SDK Tools
+        uses: android-actions/setup-android@v3
+
+      - name: Compile Native Android App Bundle
+        run: |
+          npx cap sync android
+          cd android
+          ./gradlew assembleDebug
+
+      - name: Upload Final APK File
+        uses: actions/upload-artifact@v4
+        with:
+          name: Accident-Tracker-App
+          path: android/app/build/outputs/apk/debug/app-debug.apk
